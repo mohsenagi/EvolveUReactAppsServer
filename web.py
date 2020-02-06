@@ -1,9 +1,7 @@
-import os
 from flask import Flask, jsonify, request
 from sqlalchemy import create_engine, Table, MetaData, select
 
 app = Flask(__name__)
-app.secret_key = os.urandom(16)
 
 engine = create_engine('postgres://dgukymdz:Hxiv4RLkcsflv7Tg4veHc4jCSwzrfHTS@rajje.db.elephantsql.com:5432/dgukymdz')
 connection = engine.connect()
