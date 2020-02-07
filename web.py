@@ -1,9 +1,11 @@
+import os
 from flask import Flask, jsonify, request
 from sqlalchemy import create_engine, Table, MetaData, select
 
 app = Flask(__name__)
+DATABASE_URL = os.environ['DATABASE_URL']
 
-engine = create_engine('postgres://dgukymdz:Hxiv4RLkcsflv7Tg4veHc4jCSwzrfHTS@rajje.db.elephantsql.com:5432/dgukymdz')
+engine = create_engine(DATABASE_URL, sslmode='require')
 connection = engine.connect()
 metadata = MetaData()
 city = Table('city', metadata, autoload=True, autoload_with=engine) # Reflecting Database Objects
