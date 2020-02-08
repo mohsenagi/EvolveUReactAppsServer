@@ -1,36 +1,20 @@
 import os
 from flask import Flask, jsonify, request
 from sqlalchemy import create_engine, Table, MetaData, select
+from flask_cors import CORS
 
 app = Flask(__name__)
-# os.environ['DATABASE_URL'] = 'postgres://ltxbaneafvkfyg:21161a47b691f8e9ed63e21654c71cc1f800900a34d2a6d3aa3b9e1aa38c61c8@ec2-54-197-34-207.compute-1.amazonaws.com:5432/ddi6ch5pjrkivt'
+CORS(app, supports_credentials=True)
 DATABASE_URL = os.environ['DATABASE_URL']
 
-engine = create_engine(DATABASE_URL, connect_args={'sslmode':'require'})
+engine = create_engine(DATABASE_URL, connect_args={'sslmode':'require'}) # ssl mode is required for heroku postgre db server
 connection = engine.connect()
 metadata = MetaData()
 city = Table('city', metadata, autoload=True, autoload_with=engine) # Reflecting Database Objects
 
-@app.route("/")
-def home():
-	return "My Server"
-
-@app.route("/add", methods = ['POST'])
-def add():
-    content = request.get_json()
-    connection.execute(city.insert(), content) # content should have the same keys as db columns
-    return jsonify({}), 200
-
-@app.route("/clear", methods = ['POST','GET'])
-def clear():
-    connection.execute(city.delete())
-    return jsonify({}), 200
-
-@app.route("/all", methods = ['POST','GET'])
-def all():
-    result = connection.execute(select([city]))
+def josonify_sql(sql_result):
     a = []
-    for row in result:
+    for row in sql_result:
         d = {}
         # row.items() returns an array like [(key0, value0), (key1, value1)]
         for column, value in row.items():
@@ -40,7 +24,29 @@ def all():
             except:
                 d[column] = float(value)
         a.append(d)
-    return jsonify(a), 200
+    print(a)
+    return jsonify(a)
+
+@app.route("/")
+def home():
+	return "My Server"
+
+@app.route("/add", methods = ['POST'])
+def add():
+    content = request.get_json()
+    connection.execute(city.insert(), content) # content should have the same keys as db columns
+    result = connection.execute('select * from city where id = ( select max(id) from city)')
+    return josonify_sql(result), 200
+
+@app.route("/clear", methods = ['POST','GET'])
+def clear():
+    connection.execute(city.delete())
+    return jsonify({}), 200
+
+@app.route("/all", methods = ['POST','GET'])
+def all():
+    result = connection.execute(select([city]))
+    return josonify_sql(result), 200
 
 @app.route("/update", methods = ['POST'])
 def update():

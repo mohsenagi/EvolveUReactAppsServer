@@ -10,6 +10,7 @@ gunicorn = "*"
 flask = "*"
 sqlalchemy = "*"
 psycopg2 = "*"
+flask-cors = "*"
 
 [requires]
 python_version = "3.8"
