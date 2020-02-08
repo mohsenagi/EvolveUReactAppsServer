@@ -3,9 +3,10 @@ from flask import Flask, jsonify, request
 from sqlalchemy import create_engine, Table, MetaData, select
 
 app = Flask(__name__)
+# os.environ['DATABASE_URL'] = 'postgres://ltxbaneafvkfyg:21161a47b691f8e9ed63e21654c71cc1f800900a34d2a6d3aa3b9e1aa38c61c8@ec2-54-197-34-207.compute-1.amazonaws.com:5432/ddi6ch5pjrkivt'
 DATABASE_URL = os.environ['DATABASE_URL']
 
-engine = create_engine(DATABASE_URL, sslmode='require')
+engine = create_engine(DATABASE_URL, connect_args={'sslmode':'require'})
 connection = engine.connect()
 metadata = MetaData()
 city = Table('city', metadata, autoload=True, autoload_with=engine) # Reflecting Database Objects
