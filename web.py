@@ -24,7 +24,6 @@ def josonify_sql(sql_result):
             except:
                 d[column] = float(value)
         a.append(d)
-    print(a)
     return jsonify(a)
 
 @app.route("/")
