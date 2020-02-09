@@ -37,12 +37,12 @@ def add():
     result = connection.execute('select * from city where id = ( select max(id) from city)')
     return josonify_sql(result), 200
 
-@app.route("/clear", methods = ['POST','GET'])
+@app.route("/clear", methods = ['POST'])
 def clear():
     connection.execute(city.delete())
     return jsonify({}), 200
 
-@app.route("/all", methods = ['POST','GET'])
+@app.route("/all", methods = ['GET'])
 def all():
     result = connection.execute(select([city]))
     return josonify_sql(result), 200
