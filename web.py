@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, Table, MetaData, select
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://mohsenagi.github.io"}})
+CORS(app, resources={r"/*": {"origins": ["https://mohsenagi.github.io", "http://localhost:3000"]}}) # all routes are accessible only from this address
 DATABASE_URL = os.environ['DATABASE_URL']
 
 engine = create_engine(DATABASE_URL, connect_args={'sslmode':'require'}) # ssl mode is required for heroku postgre db server
