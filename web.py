@@ -1,30 +1,39 @@
 import os
 from flask import Flask, jsonify, request
-from sqlalchemy import create_engine, Table, MetaData, select
+import psycopg2
 from flask_cors import CORS
+from decimal import Decimal
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["https://mohsenagi.github.io", "http://localhost:3000"]}}) # all routes are accessible only from this address
+os.environ['DATABASE_URL'] = "postgres://ltxbaneafvkfyg:21161a47b691f8e9ed63e21654c71cc1f800900a34d2a6d3aa3b9e1aa38c61c8@ec2-54-197-34-207.compute-1.amazonaws.com:5432/ddi6ch5pjrkivt"
 DATABASE_URL = os.environ['DATABASE_URL']
 
-engine = create_engine(DATABASE_URL, connect_args={'sslmode':'require'}) # ssl mode is required for heroku postgre db server
-connection = engine.connect()
-metadata = MetaData()
-city = Table('city', metadata, autoload=True, autoload_with=engine) # Reflecting Database Objects
-
-def josonify_sql(sql_result):
+def jsonify_sql(header, sql_result):
     a = []
     for row in sql_result:
         d = {}
-        # row.items() returns an array like [(key0, value0), (key1, value1)]
-        for column, value in row.items():
-            try:
-                jsonify(value)
-                d[column] = value
-            except:
-                d[column] = float(value)
+        for i in range(0, len(header)):
+            if type(row[i]) is Decimal:
+                d[header[i][0]] = float(row[i])
+            else:
+                d[header[i][0]] = row[i]
         a.append(d)
     return jsonify(a)
+
+def execute_sql(sql, data=[], returning=False):
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
+    cur.execute(sql, data)
+    if returning==True:
+        sql_result = cur.fetchall()
+        json_result = jsonify_sql(cur.description, sql_result)
+    else:
+        json_result = jsonify({})
+    conn.commit()
+    cur.close()
+    conn.close()
+    return json_result
 
 @app.route("/")
 def home():
@@ -33,38 +42,41 @@ def home():
 @app.route("/add", methods = ['POST'])
 def add():
     content = request.get_json()
-    connection.execute(city.insert(), content) # content should have the same keys as db columns
-    result = connection.execute('select * from city where id = ( select max(id) from city)')
-    return josonify_sql(result), 200
+    sql = "INSERT INTO city VALUES (DEFAULT, %s, %s, %s, %s) RETURNING id;"
+    data = [content['Name'], content['Latitude'], content['Longitude'], content['Population']]
+    json_result = execute_sql(sql, data, returning=True)
+    # json_result = execute_sql(sql="SELECT * FROM city WHERE id = (SELECT max(id) FROM city);", returning=True)
+    return json_result, 200
 
 @app.route("/clear", methods = ['POST'])
 def clear():
-    connection.execute(city.delete())
-    return jsonify({}), 200
+    json_result = execute_sql(sql='DELETE FROM city;')
+    return json_result, 200
 
 @app.route("/all", methods = ['GET'])
 def all():
-    result = connection.execute(select([city]))
-    return josonify_sql(result), 200
+    json_result = execute_sql(sql='SELECT * FROM city;', returning=True)
+    return json_result, 200
 
 @app.route("/update", methods = ['POST'])
 def update():
     content = request.get_json()
     if 'key' not in content:
         return jsonify({"msg":"There must be a 'key' attribute"}), 400
-    key = content['key']
-    content.pop('key')
-    connection.execute(city.update().where(city.c.id == key), content)
-    return jsonify({}), 200
+    sql = 'UPDATE city SET ("Name", "Latitude", "Longitude", "Population")=(%s, %s, %s, %s) WHERE id=%s;'
+    data = [content['Name'], content['Latitude'], content['Longitude'], content['Population'], content['key']]
+    json_result = execute_sql(sql, data)
+    return json_result, 200
 
 @app.route("/delete", methods = ['POST'])
 def delete():
     content = request.get_json()
     if 'key' not in content:
         return jsonify({"msg":"There must be a 'key' attribute"}), 400
-    key = content['key']
-    connection.execute(city.delete().where(city.c.id == key))
-    return jsonify({}), 200
+    sql = 'DELETE FROM city WHERE id=%s;'
+    data = [content['key']]
+    json_result = execute_sql(sql, data)
+    return json_result, 200
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
