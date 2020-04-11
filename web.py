@@ -6,7 +6,6 @@ from decimal import Decimal
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["https://mohsenagi.github.io", "http://localhost:3000"]}}) # all routes are accessible only from this address
-os.environ['DATABASE_URL'] = "postgres://ltxbaneafvkfyg:21161a47b691f8e9ed63e21654c71cc1f800900a34d2a6d3aa3b9e1aa38c61c8@ec2-54-197-34-207.compute-1.amazonaws.com:5432/ddi6ch5pjrkivt"
 DATABASE_URL = os.environ['DATABASE_URL']
 
 def jsonify_sql(header, sql_result):
